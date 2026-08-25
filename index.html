@@ -1,0 +1,1861 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PIXPOP AI Studio – AI Image Generator & Smart Inpaint Studio</title>
+    <meta name="description" content="Generate new AI images from text and edit real photos with smart Inpaint brush while preserving your original face and background.">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        :root {
+            --bg-main: #0a0b10;
+            --bg-card: rgba(18, 20, 29, 0.75);
+            --bg-card-hover: rgba(28, 32, 48, 0.85);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --border-focus: rgba(168, 85, 247, 0.5);
+            
+            --primary: #a855f7;
+            --primary-gradient: linear-gradient(135deg, #a855f7 0%, #ec4899 50%, #f43f5e 100%);
+            --primary-glow: rgba(168, 85, 247, 0.35);
+            
+            --accent-cyan: #06b6d4;
+            --accent-emerald: #10b981;
+            --accent-amber: #f59e0b;
+            
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            
+            --radius-sm: 8px;
+            --radius-md: 14px;
+            --radius-lg: 20px;
+            --radius-full: 9999px;
+            
+            --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.3);
+            --shadow-glow: 0 0 25px var(--primary-glow);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 15% 15%, rgba(168, 85, 247, 0.12) 0%, transparent 40%),
+                radial-gradient(circle at 85% 85%, rgba(236, 72, 153, 0.1) 0%, transparent 40%),
+                radial-gradient(circle at 50% 50%, rgba(6, 182, 212, 0.06) 0%, transparent 60%);
+            background-attachment: fixed;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        /* Top Navigation Header */
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            background: rgba(10, 11, 16, 0.8);
+            border-bottom: 1px solid var(--border-color);
+            padding: 14px 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+
+        .brand-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--primary-gradient);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            box-shadow: 0 0 15px var(--primary-glow);
+        }
+
+        .brand-text h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: inline-block;
+        }
+
+        .brand-badge {
+            font-size: 10px;
+            text-transform: uppercase;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: var(--radius-full);
+            background: rgba(168, 85, 247, 0.15);
+            color: #d8b4fe;
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            margin-left: 6px;
+            letter-spacing: 0.5px;
+        }
+
+        /* Main Container Layout */
+        .main-container {
+            max-width: 1440px;
+            margin: 0 auto;
+            padding: 28px 24px 60px;
+            display: grid;
+            grid-template-columns: 500px 1fr;
+            gap: 28px;
+            align-items: start;
+        }
+
+        @media (max-width: 1080px) {
+            .main-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Glass Cards */
+        .glass-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* Mode Selector Tabs */
+        .mode-tabs {
+            display: flex;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 4px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            margin-bottom: 22px;
+            gap: 4px;
+        }
+
+        .mode-tab {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 14px;
+            border-radius: 10px;
+            background: transparent;
+            color: var(--text-secondary);
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            transition: all 0.25s ease;
+        }
+
+        .mode-tab:hover {
+            color: var(--text-primary);
+        }
+
+        .mode-tab.active {
+            background: var(--primary-gradient);
+            color: white;
+            box-shadow: 0 4px 12px var(--primary-glow);
+        }
+
+        /* Form Labels & Controls */
+        .section-label {
+            font-family: 'Outfit', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .helper-action {
+            font-size: 12px;
+            color: var(--primary);
+            cursor: pointer;
+            text-transform: none;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: 0.2s;
+        }
+
+        .helper-action:hover {
+            color: #d8b4fe;
+            text-decoration: underline;
+        }
+
+        /* Upload Area (Img2Img) */
+        .upload-container {
+            border: 2px dashed rgba(168, 85, 247, 0.35);
+            background: rgba(168, 85, 247, 0.03);
+            border-radius: var(--radius-md);
+            padding: 22px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            margin-bottom: 16px;
+        }
+
+        .upload-container:hover, .upload-container.drag-over {
+            border-color: var(--primary);
+            background: rgba(168, 85, 247, 0.08);
+        }
+
+        .upload-icon {
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+
+        .upload-title {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .upload-subtitle {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        #imageFileInput {
+            display: none;
+        }
+
+        /* Inpaint Canvas Container */
+        .inpaint-container {
+            display: none;
+            margin-bottom: 16px;
+            background: #000;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            padding: 12px;
+        }
+
+        .inpaint-canvas-wrapper {
+            position: relative;
+            width: 100%;
+            height: 260px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #090a0f;
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+        }
+
+        #inpaintCanvas {
+            max-width: 100%;
+            max-height: 260px;
+            display: block;
+            cursor: crosshair;
+            touch-action: none;
+        }
+
+        .inpaint-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 10px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .brush-size-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .brush-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 4px 10px;
+            border-radius: var(--radius-full);
+            font-size: 11px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: 0.2s;
+        }
+
+        .brush-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .brush-btn.active {
+            background: #ec4899;
+            color: white;
+            border-color: #ec4899;
+        }
+
+        /* Prompt Text Area */
+        .prompt-wrapper {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        textarea.prompt-input {
+            width: 100%;
+            min-height: 100px;
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 14px 16px;
+            color: var(--text-primary);
+            font-size: 14px;
+            line-height: 1.5;
+            resize: vertical;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        textarea.prompt-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 16px var(--primary-glow);
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .prompt-tools {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 8px;
+        }
+
+        .tool-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            padding: 6px 12px;
+            border-radius: var(--radius-full);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .tool-btn:hover {
+            background: rgba(255, 255, 255, 0.12);
+            color: var(--text-primary);
+        }
+
+        .tool-btn.magic {
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.2) 0%, rgba(236, 72, 153, 0.2) 100%);
+            border-color: rgba(168, 85, 247, 0.4);
+            color: #d8b4fe;
+        }
+
+        .tool-btn.magic:hover {
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.35) 0%, rgba(236, 72, 153, 0.35) 100%);
+            color: white;
+            box-shadow: 0 0 12px var(--primary-glow);
+        }
+
+        /* Style Presets Grid */
+        .style-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .style-card {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 10px 6px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            user-select: none;
+        }
+
+        .style-card:hover {
+            border-color: rgba(255, 255, 255, 0.25);
+            background: rgba(255, 255, 255, 0.05);
+            transform: translateY(-2px);
+        }
+
+        .style-card.active {
+            border-color: var(--primary);
+            background: rgba(168, 85, 247, 0.15);
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.25);
+        }
+
+        .style-icon {
+            font-size: 20px;
+            margin-bottom: 3px;
+        }
+
+        .style-name {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* Aspect Ratio Selector */
+        .ratio-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .ratio-btn {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            padding: 8px 4px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: var(--text-secondary);
+        }
+
+        .ratio-btn:hover {
+            border-color: rgba(255, 255, 255, 0.2);
+            color: var(--text-primary);
+        }
+
+        .ratio-btn.active {
+            border-color: var(--accent-cyan);
+            background: rgba(6, 182, 212, 0.12);
+            color: var(--accent-cyan);
+            font-weight: 700;
+        }
+
+        .ratio-label {
+            font-size: 12px;
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+
+        .ratio-desc {
+            font-size: 10px;
+            color: var(--text-muted);
+        }
+
+        /* AI Engine Selector */
+        .setting-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+            font-size: 13px;
+        }
+
+        /* Generate Action Button */
+        .generate-btn {
+            width: 100%;
+            background: var(--primary-gradient);
+            border: none;
+            padding: 16px 24px;
+            border-radius: var(--radius-md);
+            color: white;
+            font-family: 'Outfit', sans-serif;
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 6px 25px var(--primary-glow);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .generate-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(168, 85, 247, 0.5);
+            filter: brightness(1.1);
+        }
+
+        .generate-btn:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .generate-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            filter: grayscale(0.5);
+        }
+
+        /* Right Panel: Output & Studio Canvas */
+        .output-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .preview-canvas {
+            min-height: 480px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            padding: 20px;
+        }
+
+        .empty-state {
+            text-align: center;
+            max-width: 380px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state-icon {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: rgba(168, 85, 247, 0.1);
+            border: 1px solid rgba(168, 85, 247, 0.2);
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+        }
+
+        .empty-state h3 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .empty-state p {
+            font-size: 14px;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        /* Loading Spinner Animation */
+        .generating-state {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            text-align: center;
+        }
+
+        .glow-spinner {
+            width: 70px;
+            height: 70px;
+            border: 4px solid rgba(168, 85, 247, 0.15);
+            border-top: 4px solid var(--primary);
+            border-right: 4px solid #ec4899;
+            border-radius: 50%;
+            animation: spin 1s cubic-bezier(0.68, -0.55, 0.27, 1.55) infinite;
+            box-shadow: 0 0 25px var(--primary-glow);
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .generating-text {
+            font-family: 'Outfit', sans-serif;
+            font-size: 18px;
+            font-weight: 600;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .generating-status-sub {
+            font-size: 13px;
+            color: #d8b4fe;
+        }
+
+        .generating-timer {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        /* Result Image Display */
+        .result-image-wrap {
+            display: none;
+            width: 100%;
+            position: relative;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .result-image-container {
+            position: relative;
+            display: inline-block;
+            max-width: 100%;
+        }
+
+        .result-image {
+            max-width: 100%;
+            max-height: 540px;
+            border-radius: var(--radius-md);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6), 0 0 30px rgba(168, 85, 247, 0.2);
+            object-fit: contain;
+            cursor: zoom-in;
+            transition: transform 0.3s ease;
+            display: block;
+        }
+
+        /* Close Button on Result View */
+        .result-close-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(18, 20, 29, 0.85);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            color: var(--text-primary);
+            border-radius: var(--radius-full);
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            transition: all 0.2s ease;
+            z-index: 10;
+        }
+
+        .result-close-btn:hover {
+            background: #ef4444;
+            border-color: #ef4444;
+            color: white;
+            transform: scale(1.1);
+        }
+
+        /* Action Toolbar */
+        .action-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 18px;
+            justify-content: center;
+        }
+
+        .action-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 10px 18px;
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+
+        .action-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .action-btn.primary {
+            background: #10b981;
+            border-color: #10b981;
+            color: white;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        }
+
+        .action-btn.primary:hover {
+            background: #059669;
+        }
+
+        .action-btn.danger {
+            color: #f87171;
+        }
+        .action-btn.danger:hover {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: #ef4444;
+        }
+
+        /* Gallery Section */
+        .gallery-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .gallery-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .gallery-count {
+            font-size: 12px;
+            padding: 2px 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: var(--radius-full);
+            color: var(--text-secondary);
+        }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 12px;
+            max-height: 280px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .gallery-item {
+            position: relative;
+            aspect-ratio: 1/1;
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+            cursor: pointer;
+            border: 1px solid var(--border-color);
+            transition: all 0.25s ease;
+        }
+
+        .gallery-item:hover {
+            transform: scale(1.04);
+            border-color: var(--primary);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+        }
+
+        .gallery-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .gallery-item-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 60%);
+            opacity: 0;
+            transition: 0.2s ease;
+            display: flex;
+            align-items: flex-end;
+            padding: 8px;
+        }
+
+        .gallery-item:hover .gallery-item-overlay {
+            opacity: 1;
+        }
+
+        .gallery-delete-btn {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            background: rgba(239, 68, 68, 0.85);
+            color: white;
+            border: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            opacity: 0;
+            transition: 0.2s ease;
+        }
+
+        .gallery-item:hover .gallery-delete-btn {
+            opacity: 1;
+        }
+
+        .gallery-empty {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 30px 0;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        /* Toast Notifications */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: rgba(18, 20, 29, 0.95);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            color: white;
+            padding: 12px 20px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* Lightbox Modal */
+        .lightbox-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 30px;
+        }
+
+        .lightbox-modal.open {
+            display: flex;
+        }
+
+        .lightbox-img {
+            max-width: 90vw;
+            max-height: 85vh;
+            border-radius: var(--radius-md);
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
+        }
+
+        .lightbox-close {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: white;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .lightbox-close:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Navigation -->
+    <header>
+        <div class="brand">
+            <div class="brand-icon">
+                <i data-lucide="sparkles"></i>
+            </div>
+            <div class="brand-text">
+                <h1>PIXPOP</h1>
+                <span class="brand-badge">Studio</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Studio Workspace -->
+    <main class="main-container">
+
+        <!-- Left Controls Panel -->
+        <section class="glass-card">
+            
+            <!-- Generation Mode Tabs -->
+            <div class="mode-tabs">
+                <button class="mode-tab active" id="tabText2Img" onclick="switchMode('text2img')">
+                    <i data-lucide="type"></i> Text to Image
+                </button>
+                <button class="mode-tab" id="tabImg2Img" onclick="switchMode('img2img')">
+                    <i data-lucide="brush"></i> Smart Inpaint & Edit
+                </button>
+            </div>
+
+            <!-- Img2Img / Inpaint Upload Section -->
+            <div id="img2imgUploadSection" style="display: none;">
+                
+                <div class="upload-container" id="dropZone" onclick="document.getElementById('imageFileInput').click()">
+                    <i data-lucide="cloud-upload" class="upload-icon" style="width: 36px; height: 36px;"></i>
+                    <div class="upload-title">Click to upload your portrait or photo</div>
+                    <div class="upload-subtitle">JPG, PNG, WebP up to 15MB</div>
+                    <input type="file" id="imageFileInput" accept="image/*" onchange="handleImageUpload(event)">
+                </div>
+
+                <!-- Interactive Inpaint Mask Canvas -->
+                <div class="inpaint-container" id="inpaintContainer">
+                    <div class="section-label" style="margin-bottom: 6px;">
+                        <span>🎨 Brush Over Area to Edit</span>
+                        <span class="helper-action" onclick="clearMask()">
+                            <i data-lucide="rotate-ccw" style="width: 12px; height: 12px;"></i> Clear Brush
+                        </span>
+                    </div>
+
+                    <div class="inpaint-canvas-wrapper">
+                        <canvas id="inpaintCanvas"></canvas>
+                    </div>
+
+                    <div class="inpaint-toolbar">
+                        <div class="brush-size-wrap">
+                            <span>Brush Size:</span>
+                            <input type="range" id="brushSize" min="10" max="60" value="25" style="width: 80px; accent-color: var(--primary);">
+                        </div>
+                        <div style="display: flex; gap: 6px;">
+                            <button class="brush-btn active" id="btnBrushDraw" onclick="setBrushMode('draw')">
+                                <i data-lucide="brush" style="width: 12px; height: 12px;"></i> Brush Area
+                            </button>
+                            <button class="brush-btn" id="btnBrushErase" onclick="setBrushMode('erase')">
+                                <i data-lucide="eraser" style="width: 12px; height: 12px;"></i> Erase
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Prompt Section -->
+            <div class="prompt-wrapper">
+                <div class="section-label">
+                    <span id="promptSectionTitle">Prompt Instructions</span>
+                    <span class="helper-action" onclick="surpriseMePrompt()">
+                        <i data-lucide="dices" style="width: 14px; height: 14px;"></i> Surprise Me
+                    </span>
+                </div>
+                <textarea id="promptInput" class="prompt-input" placeholder="Describe what you want to generate or modify in the brushed area..."></textarea>
+                
+                <div class="prompt-tools">
+                    <button class="tool-btn magic" onclick="enhancePrompt()">
+                        <i data-lucide="wand-2" style="width: 14px; height: 14px;"></i> Magic Enhance
+                    </button>
+                    <button class="tool-btn" onclick="document.getElementById('promptInput').value = ''">
+                        <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i> Clear
+                    </button>
+                </div>
+            </div>
+
+            <!-- Art Style Presets -->
+            <div class="section-label">
+                <span>Art & Visual Style</span>
+            </div>
+            <div class="style-grid">
+                <div class="style-card active" data-style="Photorealistic" onclick="selectStyle(this, 'Photorealistic')">
+                    <div class="style-icon">📸</div>
+                    <div class="style-name">Photoreal</div>
+                </div>
+                <div class="style-card" data-style="Anime" onclick="selectStyle(this, 'Anime')">
+                    <div class="style-icon">🎌</div>
+                    <div class="style-name">Anime</div>
+                </div>
+                <div class="style-card" data-style="Cyberpunk" onclick="selectStyle(this, 'Cyberpunk')">
+                    <div class="style-icon">🌆</div>
+                    <div class="style-name">Cyberpunk</div>
+                </div>
+                <div class="style-card" data-style="3D Render" onclick="selectStyle(this, '3D Render')">
+                    <div class="style-icon">🧸</div>
+                    <div class="style-name">3D Pixar</div>
+                </div>
+                <div class="style-card" data-style="Studio Ghibli" onclick="selectStyle(this, 'Studio Ghibli')">
+                    <div class="style-icon">🍃</div>
+                    <div class="style-name">Ghibli</div>
+                </div>
+                <div class="style-card" data-style="Fantasy Art" onclick="selectStyle(this, 'Fantasy Art')">
+                    <div class="style-icon">🐉</div>
+                    <div class="style-name">Fantasy</div>
+                </div>
+                <div class="style-card" data-style="Synthwave" onclick="selectStyle(this, 'Synthwave')">
+                    <div class="style-icon">🌴</div>
+                    <div class="style-name">80s Retro</div>
+                </div>
+                <div class="style-card" data-style="Oil Painting" onclick="selectStyle(this, 'Oil Painting')">
+                    <div class="style-icon">🎨</div>
+                    <div class="style-name">Oil Paint</div>
+                </div>
+                <div class="style-card" data-style="Pixel Art" onclick="selectStyle(this, 'Pixel Art')">
+                    <div class="style-icon">👾</div>
+                    <div class="style-name">Pixel Art</div>
+                </div>
+            </div>
+
+            <!-- Aspect Ratio -->
+            <div class="section-label">
+                <span>Aspect Ratio</span>
+            </div>
+            <div class="ratio-grid">
+                <div class="ratio-btn active" data-ratio="1:1" data-w="1024" data-h="1024" onclick="selectRatio(this)">
+                    <div class="ratio-label">1:1</div>
+                    <div class="ratio-desc">Square</div>
+                </div>
+                <div class="ratio-btn" data-ratio="16:9" data-w="1280" data-h="720" onclick="selectRatio(this)">
+                    <div class="ratio-label">16:9</div>
+                    <div class="ratio-desc">Landscape</div>
+                </div>
+                <div class="ratio-btn" data-ratio="9:16" data-w="720" data-h="1280" onclick="selectRatio(this)">
+                    <div class="ratio-label">9:16</div>
+                    <div class="ratio-desc">Portrait</div>
+                </div>
+                <div class="ratio-btn" data-ratio="4:3" data-w="1024" data-h="768" onclick="selectRatio(this)">
+                    <div class="ratio-label">4:3</div>
+                    <div class="ratio-desc">Photo</div>
+                </div>
+            </div>
+
+            <!-- AI Engine Selector -->
+            <div style="margin-bottom: 20px;">
+                <div class="setting-row">
+                    <span style="color: var(--text-secondary); font-size: 13px; font-weight: 600;">AI Engine</span>
+                    <select id="modelSelector" style="background: rgba(0,0,0,0.4); border: 1px solid var(--border-color); color: white; padding: 6px 12px; border-radius: 8px; outline: none; font-size: 13px; cursor: pointer;">
+                        <option value="flux-realism">FLUX Realism Pro (Real Skin & Lighting)</option>
+                        <option value="flux">FLUX.1 Schnell</option>
+                        <option value="flux-anime">FLUX Anime Edition</option>
+                        <option value="turbo">Turbo Ultra-Fast</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Generate Button -->
+            <button id="generateBtn" class="generate-btn" onclick="generateImage()">
+                <i data-lucide="sparkles"></i>
+                <span id="generateBtnText">Generate Masterpiece</span>
+            </button>
+
+        </section>
+
+        <!-- Right Output & Studio Canvas -->
+        <section class="output-panel">
+            
+            <!-- Canvas / Result Box -->
+            <div class="preview-canvas" id="previewCanvas">
+                
+                <!-- Initial Empty State -->
+                <div class="empty-state" id="emptyState">
+                    <div class="empty-state-icon">
+                        <i data-lucide="image" style="width: 32px; height: 32px;"></i>
+                    </div>
+                    <h3>Your canvas is ready</h3>
+                    <p>Enter a prompt on the left or upload your photo to edit with Inpainting, pick your style, and click Generate.</p>
+                </div>
+
+                <!-- Generating State -->
+                <div class="generating-state" id="generatingState">
+                    <div class="glow-spinner"></div>
+                    <div class="generating-text" id="generatingMainText">Processing AI Image...</div>
+                    <div class="generating-status-sub" id="generatingSubText">Preserving original photo and synthesizing edit</div>
+                    <div class="generating-timer" id="generatingTimer">Elapsed: 0.0s</div>
+                </div>
+
+                <!-- Result Image Wrap -->
+                <div class="result-image-wrap" id="resultImageWrap">
+                    <div class="result-image-container">
+                        <button class="result-close-btn" title="Close view" onclick="closeResultView()">
+                            <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+                        </button>
+                        <img id="mainResultImg" class="result-image" src="" alt="AI Generated result" onclick="openLightbox(this.src)">
+                    </div>
+                    
+                    <!-- Action Toolbar -->
+                    <div class="action-toolbar">
+                        <a id="downloadBtn" class="action-btn primary" download="pixpop_image.png">
+                            <i data-lucide="download" style="width: 16px; height: 16px;"></i> Download HD
+                        </a>
+                        <button class="action-btn" onclick="copyPrompt()">
+                            <i data-lucide="copy" style="width: 16px; height: 16px;"></i> Copy Prompt
+                        </button>
+                        <button class="action-btn" onclick="reuseInImg2Img()">
+                            <i data-lucide="repeat" style="width: 16px; height: 16px;"></i> Remix / Restyle
+                        </button>
+                        <button class="action-btn" onclick="openLightbox(document.getElementById('mainResultImg').src)">
+                            <i data-lucide="maximize-2" style="width: 16px; height: 16px;"></i> Fullscreen
+                        </button>
+                        <button class="action-btn danger" onclick="closeResultView()">
+                            <i data-lucide="x" style="width: 16px; height: 16px;"></i> Close
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Persistent Gallery Section -->
+            <div class="glass-card">
+                <div class="gallery-header">
+                    <div class="gallery-title">
+                        <i data-lucide="layout-grid" style="color: var(--primary); width: 20px; height: 20px;"></i>
+                        <span>Creation Gallery</span>
+                        <span class="gallery-count" id="galleryCount">0 images</span>
+                    </div>
+                    <button class="tool-btn" onclick="clearAllGallery()" style="color: #ef4444;">
+                        <i data-lucide="trash-2" style="width: 12px; height: 12px;"></i> Clear Gallery
+                    </button>
+                </div>
+
+                <div class="gallery-grid" id="galleryGrid">
+                    <div class="gallery-empty" id="galleryEmpty">
+                        No creations saved yet. Your generated artwork will appear here permanently!
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Lightbox Modal -->
+    <div class="lightbox-modal" id="lightboxModal" onclick="closeLightbox(event)">
+        <button class="lightbox-close" onclick="closeLightbox(event)">
+            <i data-lucide="x" style="width: 24px; height: 24px;"></i>
+        </button>
+        <img class="lightbox-img" id="lightboxImg" src="" alt="Enlarged view">
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+        <i data-lucide="check-circle" style="color: var(--accent-emerald);"></i>
+        <span id="toastMessage">Success!</span>
+    </div>
+
+    <!-- Application Script -->
+    <script>
+        // State variables
+        let currentMode = 'text2img'; // 'text2img' | 'img2img'
+        let selectedStyle = 'Photorealistic';
+        let currentDimensions = { width: 1024, height: 1024 };
+        let uploadedFile = null;
+        let uploadedImageElement = new Image();
+        let uploadedPublicUrl = null;
+        let isGenerating = false;
+        let timerInterval = null;
+        let lastGeneratedBlob = null;
+        let lastPromptUsed = "";
+
+        // Inpaint Canvas state
+        let inpaintCanvas, inpaintCtx;
+        let maskCanvas, maskCtx;
+        let isDrawing = false;
+        let brushMode = 'draw'; // 'draw' | 'erase'
+        let hasMaskDrawn = false;
+
+        // Style prompt modifiers
+        const styleModifiers = {
+            'Photorealistic': 'authentic realistic photograph, 8k UHD, realistic daylight, true skin texture, sharp focus, professional camera',
+            'Anime': 'anime style, makoto shinkai aesthetic, vibrant colors, detailed lineart, studio anime key visual, expressive eyes, masterpiece',
+            'Cyberpunk': 'cyberpunk aesthetic, neon glow, futuristic night city, holographic reflections, moody atmospheric lighting, high tech',
+            '3D Render': 'cute 3d render, pixar disney animation style, vibrant lighting, smooth textures, ray tracing, cute character concept',
+            'Studio Ghibli': 'studio ghibli art style, hayao miyazaki hand-drawn animation, lush scenery, soft pastel watercolors, nostalgic masterpiece',
+            'Fantasy Art': 'epic fantasy concept art, mystical atmosphere, magical particles, ornate details, dungeons and dragons illustration',
+            'Synthwave': 'synthwave 1980s retro aesthetic, purple and magenta neon, grid horizon, retrofuturism, outrun style',
+            'Oil Painting': 'oil on canvas painting, expressive visible brushstrokes, textured impasto, classical fine art masterpiece',
+            'Pixel Art': '16-bit pixel art, detailed retro game sprite, vibrant color palette, crisp pixels, nostalgic art'
+        };
+
+        const surprisePrompts = [
+            "A cosmic jellyfish floating gracefully through a galaxy of glowing stars and nebulae",
+            "Cyberpunk street vendor cooking dumplings in rainy futuristic Neo-Tokyo alleyway, neon signs",
+            "An ancient temple carved into a giant mossy tree inside an enchanted glowing forest",
+            "A cute baby red panda wearing a steampunk aviator helmet and goggles, portrait",
+            "Futuristic sports car speeding across a rainbow bridge on Mars, cinematic sunset",
+            "A serene Japanese tea house on a floating island above fluffy sunset clouds",
+            "An ethereal crystal dragon resting on a mountain peak surrounded by aurora borealis"
+        ];
+
+        // --- IndexedDB for Permanent Gallery Storage ---
+        const DB_NAME = "PixpopStudioDB";
+        const DB_VERSION = 1;
+        const STORE_NAME = "creations";
+
+        function openDatabase() {
+            return new Promise((resolve, reject) => {
+                const req = indexedDB.open(DB_NAME, DB_VERSION);
+                req.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains(STORE_NAME)) {
+                        db.createObjectStore(STORE_NAME, { keyPath: "id" });
+                    }
+                };
+                req.onsuccess = () => resolve(req.result);
+                req.onerror = () => reject(req.error);
+            });
+        }
+
+        async function saveCreationToDB(creation) {
+            try {
+                const db = await openDatabase();
+                const tx = db.transaction(STORE_NAME, "readwrite");
+                tx.objectStore(STORE_NAME).add(creation);
+                return new Promise((res) => tx.oncomplete = () => res());
+            } catch (err) {
+                console.error("DB Save Error:", err);
+            }
+        }
+
+        async function getAllCreationsFromDB() {
+            try {
+                const db = await openDatabase();
+                const tx = db.transaction(STORE_NAME, "readonly");
+                const store = tx.objectStore(STORE_NAME);
+                const req = store.getAll();
+                return new Promise((res) => req.onsuccess = () => res(req.result || []));
+            } catch (err) {
+                console.error("DB Load Error:", err);
+                return [];
+            }
+        }
+
+        async function deleteCreationFromDB(id) {
+            try {
+                const db = await openDatabase();
+                const tx = db.transaction(STORE_NAME, "readwrite");
+                tx.objectStore(STORE_NAME).delete(id);
+                return new Promise((res) => tx.oncomplete = () => res());
+            } catch (err) {
+                console.error("DB Delete Error:", err);
+            }
+        }
+
+        async function clearDB() {
+            try {
+                const db = await openDatabase();
+                const tx = db.transaction(STORE_NAME, "readwrite");
+                tx.objectStore(STORE_NAME).clear();
+                return new Promise((res) => tx.oncomplete = () => res());
+            } catch (err) {
+                console.error("DB Clear Error:", err);
+            }
+        }
+
+        // --- Mode Switching ---
+        function switchMode(mode) {
+            currentMode = mode;
+            const tabT2I = document.getElementById('tabText2Img');
+            const tabI2I = document.getElementById('tabImg2Img');
+            const img2imgSection = document.getElementById('img2imgUploadSection');
+            const btnText = document.getElementById('generateBtnText');
+            const promptTitle = document.getElementById('promptSectionTitle');
+            const promptInput = document.getElementById('promptInput');
+
+            if (mode === 'text2img') {
+                tabT2I.classList.add('active');
+                tabI2I.classList.remove('active');
+                img2imgSection.style.display = 'none';
+                btnText.innerText = "Generate Masterpiece";
+                promptTitle.innerText = "Prompt Description";
+                promptInput.placeholder = "Describe the image you want to create in vivid detail...";
+            } else {
+                tabI2I.classList.add('active');
+                tabT2I.classList.remove('active');
+                img2imgSection.style.display = 'block';
+                btnText.innerText = "Generate AI Edit";
+                promptTitle.innerText = "Prompt Instructions for Inpaint Area";
+                promptInput.placeholder = "Describe what to put in the brushed area (e.g. sharp tailored black suit, leather jacket, gold jewelry)...";
+            }
+        }
+
+        // --- Style & Aspect Ratio Selection ---
+        function selectStyle(element, styleName) {
+            document.querySelectorAll('.style-card').forEach(card => card.classList.remove('active'));
+            element.classList.add('active');
+            selectedStyle = styleName;
+        }
+
+        function selectRatio(element) {
+            document.querySelectorAll('.ratio-btn').forEach(btn => btn.classList.remove('active'));
+            element.classList.add('active');
+            currentDimensions.width = parseInt(element.dataset.w);
+            currentDimensions.height = parseInt(element.dataset.h);
+        }
+
+        function surpriseMePrompt() {
+            const randomIndex = Math.floor(Math.random() * surprisePrompts.length);
+            document.getElementById('promptInput').value = surprisePrompts[randomIndex];
+            showToast("Surprise prompt loaded!");
+        }
+
+        function enhancePrompt() {
+            const promptEl = document.getElementById('promptInput');
+            let text = promptEl.value.trim();
+            if (!text) {
+                showToast("Please enter a basic prompt first!");
+                return;
+            }
+            
+            const enhancements = [
+                "photorealistic tailoring, 8k UHD, natural lighting, high fabric detail",
+                "authentic portrait photograph, sharp focus, natural daylight, true skin texture",
+                "professional fashion photography, natural sunlight, hyper-realistic"
+            ];
+            
+            const randomEnhancement = enhancements[Math.floor(Math.random() * enhancements.length)];
+            promptEl.value = `${text}, ${randomEnhancement}`;
+            showToast("Prompt enhanced with visual details!");
+        }
+
+        // --- Interactive Inpaint Mask Canvas ---
+        function initInpaintCanvas() {
+            inpaintCanvas = document.getElementById('inpaintCanvas');
+            inpaintCtx = inpaintCanvas.getContext('2d');
+
+            maskCanvas = document.createElement('canvas');
+            maskCtx = maskCanvas.getContext('2d');
+
+            inpaintCanvas.addEventListener('pointerdown', startDrawing);
+            inpaintCanvas.addEventListener('pointermove', draw);
+            window.addEventListener('pointerup', stopDrawing);
+        }
+
+        function handleImageUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            uploadedFile = file;
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                uploadedImageElement = new Image();
+                uploadedImageElement.onload = function() {
+                    setupInpaintCanvasWithImage();
+                    document.getElementById('inpaintContainer').style.display = 'block';
+                    document.getElementById('dropZone').style.display = 'none';
+                    showToast("Photo loaded! Brush over the area you want to edit.");
+                };
+                uploadedImageElement.src = event.target.result;
+
+                // Pre-upload to temporary bridge in background
+                bridgeImageToCloud(file);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function setupInpaintCanvasWithImage() {
+            const maxW = 460;
+            const maxH = 260;
+            let w = uploadedImageElement.width;
+            let h = uploadedImageElement.height;
+
+            const scale = Math.min(maxW / w, maxH / h);
+            inpaintCanvas.width = w * scale;
+            inpaintCanvas.height = h * scale;
+
+            maskCanvas.width = inpaintCanvas.width;
+            maskCanvas.height = inpaintCanvas.height;
+
+            maskCtx.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
+            hasMaskDrawn = false;
+            redrawCanvas();
+        }
+
+        function redrawCanvas() {
+            inpaintCtx.clearRect(0, 0, inpaintCanvas.width, inpaintCanvas.height);
+            inpaintCtx.drawImage(uploadedImageElement, 0, 0, inpaintCanvas.width, inpaintCanvas.height);
+            inpaintCtx.drawImage(maskCanvas, 0, 0);
+        }
+
+        function startDrawing(e) {
+            isDrawing = true;
+            draw(e);
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            const rect = inpaintCanvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const brushSize = document.getElementById('brushSize').value;
+
+            maskCtx.beginPath();
+            maskCtx.arc(x, y, brushSize / 2, 0, Math.PI * 2);
+            
+            if (brushMode === 'draw') {
+                maskCtx.fillStyle = 'rgba(236, 72, 153, 0.45)';
+                maskCtx.fill();
+                hasMaskDrawn = true;
+            } else {
+                maskCtx.globalCompositeOperation = 'destination-out';
+                maskCtx.fill();
+                maskCtx.globalCompositeOperation = 'source-over';
+            }
+
+            redrawCanvas();
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+        }
+
+        function setBrushMode(mode) {
+            brushMode = mode;
+            document.getElementById('btnBrushDraw').classList.toggle('active', mode === 'draw');
+            document.getElementById('btnBrushErase').classList.toggle('active', mode === 'erase');
+        }
+
+        function clearMask() {
+            maskCtx.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
+            hasMaskDrawn = false;
+            redrawCanvas();
+            showToast("Brush mask cleared!");
+        }
+
+        // Fast image bridge to get a public URL for AI diffusion models
+        async function bridgeImageToCloud(file) {
+            try {
+                const compressedBlob = await resizeImageIfNeeded(file);
+                const formData = new FormData();
+                formData.append('file', compressedBlob, 'reference.png');
+
+                const res = await fetch('https://tmpfiles.org/api/v1/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.data && data.data.url) {
+                        uploadedPublicUrl = data.data.url.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
+                        console.log("Cloud bridge ready:", uploadedPublicUrl);
+                    }
+                }
+            } catch (err) {
+                console.warn("Background bridge notice:", err);
+            }
+        }
+
+        function resizeImageIfNeeded(file) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    let maxDim = 1024;
+                    let w = img.width;
+                    let h = img.height;
+                    if (w > maxDim || h > maxDim) {
+                        if (w > h) {
+                            h = Math.round((h * maxDim) / w);
+                            w = maxDim;
+                        } else {
+                            w = Math.round((w * maxDim) / h);
+                            h = maxDim;
+                        }
+                    }
+                    canvas.width = w;
+                    canvas.height = h;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, w, h);
+                    canvas.toBlob((blob) => resolve(blob || file), 'image/jpeg', 0.85);
+                };
+                img.src = URL.createObjectURL(file);
+            });
+        }
+
+        // --- Core Image Generation & Inpainting Compositor ---
+        async function generateImage() {
+            const promptInput = document.getElementById('promptInput');
+            const userPrompt = promptInput.value.trim();
+
+            if (!userPrompt && currentMode === 'text2img') {
+                showToast("Please enter a prompt to generate!");
+                promptInput.focus();
+                return;
+            }
+
+            if (currentMode === 'img2img' && !uploadedFile) {
+                showToast("Please upload a photo first!");
+                return;
+            }
+
+            if (isGenerating) return;
+
+            setGeneratingState(true);
+
+            // Construct enriched prompt
+            const styleModifier = styleModifiers[selectedStyle] || '';
+            let fullPrompt = userPrompt;
+
+            if (currentMode === 'img2img') {
+                fullPrompt = `Authentic realistic photograph of this exact person with original face, natural skin tone, dark wavy hair, and background. Modify brushed area into: ${fullPrompt || 'a sharp formal tailored black suit'}, realistic texture, natural daylight, 8k photo`;
+            } else if (styleModifier) {
+                fullPrompt = `${fullPrompt}, ${styleModifier}`;
+            }
+
+            lastPromptUsed = userPrompt || selectedStyle;
+            const seed = Math.floor(Math.random() * 999999999);
+            const model = document.getElementById('modelSelector').value;
+            const { width, height } = currentDimensions;
+
+            // Handle Img2Img Bridge
+            if (currentMode === 'img2img' && !uploadedPublicUrl && uploadedFile) {
+                updateGeneratingStatus("Uploading photo to AI engine...", "Creating high-speed bridge");
+                await bridgeImageToCloud(uploadedFile);
+            }
+
+            updateGeneratingStatus("AI synthesizing edit & preserving identity...", "Generating high-resolution result");
+
+            // Build AI Endpoint URL
+            const encodedPrompt = encodeURIComponent(fullPrompt);
+            let imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${width}&height=${height}&seed=${seed}&model=${model}&nologo=true&enhance=false`;
+
+            if (currentMode === 'img2img' && uploadedPublicUrl) {
+                imageUrl += `&image=${encodeURIComponent(uploadedPublicUrl)}`;
+            }
+
+            try {
+                const response = await fetch(imageUrl);
+                if (!response.ok) throw new Error("Generation server returned error");
+                
+                const blob = await response.blob();
+                lastGeneratedBlob = blob;
+
+                // Smart Inpaint Compositing (If user brushed a mask, composite onto original real photo)
+                if (currentMode === 'img2img' && hasMaskDrawn && uploadedImageElement.src) {
+                    updateGeneratingStatus("Compositing onto 100% untouched original face...", "Finalizing seamless blend");
+                    const compositedBlob = await compositeInpaintMask(blob);
+                    const blobUrl = URL.createObjectURL(compositedBlob);
+                    displayResult(blobUrl, fullPrompt);
+                    saveToGallery(compositedBlob, userPrompt, model);
+                } else {
+                    const blobUrl = URL.createObjectURL(blob);
+                    displayResult(blobUrl, fullPrompt);
+                    saveToGallery(blob, userPrompt, model);
+                }
+
+                showToast("AI edit completed successfully!");
+            } catch (err) {
+                console.error("Generation error:", err);
+                showToast("Retrying with alternate inference node...");
+                
+                try {
+                    let fallbackUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${width}&height=${height}&seed=${seed}&nologo=true`;
+                    if (currentMode === 'img2img' && uploadedPublicUrl) {
+                        fallbackUrl += `&image=${encodeURIComponent(uploadedPublicUrl)}`;
+                    }
+                    const res = await fetch(fallbackUrl);
+                    const blob = await res.blob();
+                    const blobUrl = URL.createObjectURL(blob);
+                    displayResult(blobUrl, fullPrompt);
+                } catch(e) {
+                    showToast("Failed to complete image. Please check internet connection.");
+                }
+            } finally {
+                setGeneratingState(false);
+            }
+        }
+
+        // Composite the AI generated edit ONLY onto the brushed mask area of original photo
+        function compositeInpaintMask(aiBlob) {
+            return new Promise((resolve) => {
+                const aiImg = new Image();
+                aiImg.onload = () => {
+                    const finalCanvas = document.createElement('canvas');
+                    finalCanvas.width = uploadedImageElement.width;
+                    finalCanvas.height = uploadedImageElement.height;
+                    const fCtx = finalCanvas.getContext('2d');
+
+                    // 1. Draw 100% ORIGINAL photo (Face, hair, mountains untouched)
+                    fCtx.drawImage(uploadedImageElement, 0, 0);
+
+                    // 2. Create scaled mask
+                    const maskScaled = document.createElement('canvas');
+                    maskScaled.width = finalCanvas.width;
+                    maskScaled.height = finalCanvas.height;
+                    const mCtx = maskScaled.getContext('2d');
+                    mCtx.drawImage(maskCanvas, 0, 0, finalCanvas.width, finalCanvas.height);
+
+                    // 3. Draw AI generated image with soft feathered mask blend
+                    const patchCanvas = document.createElement('canvas');
+                    patchCanvas.width = finalCanvas.width;
+                    patchCanvas.height = finalCanvas.height;
+                    const pCtx = patchCanvas.getContext('2d');
+
+                    pCtx.drawImage(aiImg, 0, 0, finalCanvas.width, finalCanvas.height);
+                    pCtx.globalCompositeOperation = 'destination-in';
+                    pCtx.drawImage(maskScaled, 0, 0);
+
+                    // 4. Blend onto original
+                    fCtx.drawImage(patchCanvas, 0, 0);
+                    finalCanvas.toBlob((blob) => resolve(blob || aiBlob), 'image/png');
+                };
+                aiImg.src = URL.createObjectURL(aiBlob);
+            });
+        }
+
+        function saveToGallery(blob, userPrompt, model) {
+            const creationId = "img_" + Date.now();
+            const reader = new FileReader();
+            reader.onloadend = async function() {
+                const base64data = reader.result;
+                const item = {
+                    id: creationId,
+                    dataUrl: base64data,
+                    prompt: userPrompt || selectedStyle,
+                    style: selectedStyle,
+                    mode: currentMode,
+                    model: model,
+                    timestamp: Date.now()
+                };
+                await saveCreationToDB(item);
+                renderGallery();
+            };
+            reader.readAsDataURL(blob);
+        }
+
+        function setGeneratingState(generating) {
+            isGenerating = generating;
+            const generateBtn = document.getElementById('generateBtn');
+            const emptyState = document.getElementById('emptyState');
+            const generatingState = document.getElementById('generatingState');
+            const resultImageWrap = document.getElementById('resultImageWrap');
+            const timerEl = document.getElementById('generatingTimer');
+
+            if (generating) {
+                generateBtn.disabled = true;
+                emptyState.style.display = 'none';
+                resultImageWrap.style.display = 'none';
+                generatingState.style.display = 'flex';
+
+                let seconds = 0;
+                timerInterval = setInterval(() => {
+                    seconds += 0.1;
+                    timerEl.innerText = `Elapsed: ${seconds.toFixed(1)}s`;
+                }, 100);
+            } else {
+                generateBtn.disabled = false;
+                generatingState.style.display = 'none';
+                if (timerInterval) clearInterval(timerInterval);
+            }
+        }
+
+        function updateGeneratingStatus(main, sub) {
+            const mainText = document.getElementById('generatingMainText');
+            const subText = document.getElementById('generatingSubText');
+            if (mainText) mainText.innerText = main;
+            if (subText) subText.innerText = sub;
+        }
+
+        function displayResult(url, prompt) {
+            const emptyState = document.getElementById('emptyState');
+            const resultWrap = document.getElementById('resultImageWrap');
+            const mainImg = document.getElementById('mainResultImg');
+            const downloadBtn = document.getElementById('downloadBtn');
+
+            emptyState.style.display = 'none';
+            mainImg.src = url;
+            downloadBtn.href = url;
+            downloadBtn.download = `PIXPOP_${selectedStyle}_${Date.now()}.png`;
+
+            resultWrap.style.display = 'flex';
+            lucide.createIcons();
+        }
+
+        function closeResultView() {
+            const resultWrap = document.getElementById('resultImageWrap');
+            const emptyState = document.getElementById('emptyState');
+            const mainImg = document.getElementById('mainResultImg');
+
+            resultWrap.style.display = 'none';
+            emptyState.style.display = 'block';
+            mainImg.src = '';
+            lastGeneratedBlob = null;
+        }
+
+        // --- Gallery Management ---
+        async function renderGallery() {
+            const creations = await getAllCreationsFromDB();
+            const grid = document.getElementById('galleryGrid');
+            const countEl = document.getElementById('galleryCount');
+            const emptyEl = document.getElementById('galleryEmpty');
+
+            countEl.innerText = `${creations.length} image${creations.length === 1 ? '' : 's'}`;
+
+            if (creations.length === 0) {
+                grid.innerHTML = '';
+                grid.appendChild(emptyEl);
+                emptyEl.style.display = 'block';
+                return;
+            }
+
+            grid.innerHTML = '';
+            creations.sort((a, b) => b.timestamp - a.timestamp);
+
+            creations.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'gallery-item';
+                div.innerHTML = `
+                    <img src="${item.dataUrl}" alt="${item.prompt}">
+                    <div class="gallery-item-overlay">
+                        <span style="font-size: 11px; font-weight: 600; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.style}</span>
+                    </div>
+                    <button class="gallery-delete-btn" title="Delete" onclick="deleteGalleryItem(event, '${item.id}')">
+                        <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                    </button>
+                `;
+
+                div.onclick = (e) => {
+                    if (e.target.closest('.gallery-delete-btn')) return;
+                    displayResult(item.dataUrl, item.prompt);
+                    document.getElementById('promptInput').value = item.prompt;
+                    showToast("Loaded creation from gallery");
+                };
+
+                grid.appendChild(div);
+            });
+
+            lucide.createIcons();
+        }
+
+        async function deleteGalleryItem(e, id) {
+            e.stopPropagation();
+            await deleteCreationFromDB(id);
+            renderGallery();
+            showToast("Image deleted from gallery");
+        }
+
+        async function clearAllGallery() {
+            if (confirm("Are you sure you want to clear your entire gallery?")) {
+                await clearDB();
+                renderGallery();
+                showToast("Gallery cleared");
+            }
+        }
+
+        // --- Actions Toolbar Handlers ---
+        function copyPrompt() {
+            const promptText = document.getElementById('promptInput').value || lastPromptUsed;
+            if (promptText) {
+                navigator.clipboard.writeText(promptText);
+                showToast("Prompt copied to clipboard!");
+            }
+        }
+
+        function reuseInImg2Img() {
+            const currentSrc = document.getElementById('mainResultImg').src;
+            if (!currentSrc) return;
+
+            fetch(currentSrc)
+                .then(r => r.blob())
+                .then(blob => {
+                    uploadedFile = new File([blob], "remix.png", { type: "image/png" });
+                    uploadedImageElement = new Image();
+                    uploadedImageElement.onload = function() {
+                        setupInpaintCanvasWithImage();
+                        document.getElementById('inpaintContainer').style.display = 'block';
+                        document.getElementById('dropZone').style.display = 'none';
+                    };
+                    uploadedImageElement.src = currentSrc;
+                    bridgeImageToCloud(uploadedFile);
+                });
+
+            switchMode('img2img');
+            showToast("Loaded image into Inpaint Studio!");
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // --- Lightbox ---
+        function openLightbox(src) {
+            if (!src) return;
+            document.getElementById('lightboxImg').src = src;
+            document.getElementById('lightboxModal').classList.add('open');
+        }
+
+        function closeLightbox(e) {
+            if (e.target.id === 'lightboxModal' || e.target.closest('.lightbox-close')) {
+                document.getElementById('lightboxModal').classList.remove('open');
+            }
+        }
+
+        // --- Toast Notification ---
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMessage').innerText = msg;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // --- Keyboard Shortcut (Ctrl+Enter to generate) ---
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                generateImage();
+            }
+        });
+
+        // Initialize on load
+        window.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            initInpaintCanvas();
+            renderGallery();
+        });
+    </script>
+</body>
+</html>
